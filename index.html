@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Countdown - June 13, 2026</title>
+  <title>The Surprise</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
   <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- Ambient Animated Background -->
@@ -21,39 +25,53 @@
   </div>
 
   <!-- Login Modal -->
-  <div id="loginModal" class="modal-overlay">
+  <div id="loginModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Welcome Back</h2>
-        <p>Please enter your phone number to access the experience.</p>
+        <h2>Welcome</h2>
+        <p>Please enter your email to access the experience.</p>
       </div>
       <form id="loginForm" class="login-form" novalidate>
-        <div class="input-group">
-          <label for="phoneNumber">Phone Number</label>
-          <div class="phone-input-wrapper">
-            <span class="country-code">+91</span>
-            <input type="tel" id="phoneNumber" placeholder="98765-43210" autocomplete="tel" required>
+        <!-- Email Input Section -->
+        <div id="emailEntrySection">
+          <div class="input-group">
+            <label for="loginEmail">Email Address</label>
+            <div class="phone-input-wrapper">
+              <input type="email" id="loginEmail" placeholder="you@example.com" required>
+            </div>
+            <span class="error-msg" id="emailError">Please enter a valid email address</span>
           </div>
-          <span class="error-msg" id="phoneError">Please enter a valid phone number</span>
+          <button type="submit" id="loginBtn" class="btn primary-btn">
+            <span>Send Sign-In Link</span>
+            <div class="btn-glow"></div>
+          </button>
         </div>
-        <button type="submit" id="loginBtn" class="btn primary-btn">
-          <span>Authenticate</span>
-          <div class="btn-glow"></div>
-        </button>
+
+        <!-- Success/Sent State Message (Hidden initially) -->
+        <div id="emailSentSection" class="hidden">
+          <div class="success-screen" style="padding: 10px 0;">
+            <div class="success-icon" style="font-size: 48px; margin-bottom: 10px;">✉️</div>
+            <h3 style="font-size: 20px;">Link Sent!</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5;">
+              We sent a secure link to your email. Click the link in your email inbox to open the countdown.
+            </p>
+          </div>
+        </div>
       </form>
     </div>
   </div>
 
   <!-- Main Website Container (Hidden initially until login) -->
   <main id="mainContent" class="main-container hidden">
-    <div class="slideshow-wrapper">
-      
+    <div class="slideshow-wrapper show-slide-1">
+
       <!-- Slide 1: Greeting -->
-      <section id="slideGreeting" class="slide active-slide">
+      <section id="slideGreeting" class="slide">
         <div class="glass-card greeting-card">
           <div class="avatar-icon">👋</div>
-          <h1 class="greeting-title">Hii User</h1>
-          <p class="greeting-subtitle">Welcome to your personal portal. Something extraordinary is waiting for you just beyond the horizon. Let's take a look at what lies ahead.</p>
+          <h1 class="greeting-title">Hii KHUSHEEEEE</h1>
+          <p class="greeting-subtitle">This is a special website dedicated to you. I have created a special experience
+            just for you. Let's see what lies ahead.</p>
           <button id="btnLetsSee" class="btn primary-btn pulse-btn">
             <span>Let's See</span>
             <div class="btn-glow"></div>
@@ -62,10 +80,10 @@
       </section>
 
       <!-- Slide 2: Countdown -->
-      <section id="slideCountdown" class="slide next-slide">
+      <section id="slideCountdown" class="slide">
         <div class="glass-card countdown-card">
           <h2 class="mystery-heading">Can you guess it?</h2>
-          
+
           <!-- Countdown Display -->
           <div class="countdown-display">
             <div class="time-block">
@@ -88,7 +106,7 @@
               <div class="time-label">Secs</div>
             </div>
           </div>
-          
+
           <!-- <p class="target-date-text">Target Date: June 13, 2026</p>  -->
 
           <!-- Interactive Hint Area -->
@@ -98,16 +116,89 @@
                 <span>Hint</span>
               </button>
             </div>
-            
+
             <!-- Hidden Hint Details Box -->
             <div id="hintBox" class="hint-box collapsed">
               <div class="hint-box-content">
                 <h3>💡 A Secret Awaits</h3>
-                <p>June 13, 2026 is a day marked in the celestial calendar. On this day, a grand cosmic event aligns, or perhaps it's just the countdown to your next big milestone! Hold onto this key, for time reveals all secrets.</p>
+                <p>I have planned something special for us on our day.</p>
               </div>
             </div>
           </div>
 
+          <!-- Proceed to RSVP -->
+          <button id="btnGoToAvailability" class="btn primary-btn slide-next-trigger btn-hidden">
+            <span>Confirm Availability</span>
+            <div class="btn-glow"></div>
+          </button>
+
+        </div>
+      </section>
+
+      <!-- Slide 3: Confirm Availability -->
+      <section id="slideAvailability" class="slide">
+        <div class="glass-card availability-card">
+          <h2 class="mystery-heading">Confirm Availability</h2>
+          <p class="greeting-subtitle" style="margin-bottom: 25px;">Let us know if you'll be joining us on this
+            memorable day!</p>
+
+          <form id="availabilityForm" class="availability-form" novalidate>
+            <!-- Email Field -->
+            <div class="input-group">
+              <label for="userEmail">Email Address</label>
+              <div class="phone-input-wrapper">
+                <input type="email" id="userEmail" placeholder="you@example.com" required>
+              </div>
+              <span class="error-msg" id="emailError">Please enter a valid email address</span>
+            </div>
+
+            <!-- Choice Field -->
+            <div class="input-group">
+              <label>Will you be attending?</label>
+              <div class="choices-container">
+                <label class="choice-card" for="attendYes">
+                  <input type="radio" id="attendYes" name="attendance" value="yes" required>
+                  <div class="choice-content">
+                    <span class="choice-emoji">🎉</span>
+                    <span class="choice-text">Yes, count me in!</span>
+                  </div>
+                </label>
+                <label class="choice-card" for="attendNo">
+                  <input type="radio" id="attendNo" name="attendance" value="no" required>
+                  <div class="choice-content">
+                    <span class="choice-emoji">😁</span>
+                    <span class="choice-text">No, definately count me in.</span>
+                  </div>
+                </label>
+              </div>
+              <span class="error-msg" id="choiceError">Please select one of the options</span>
+            </div>
+
+            <button type="submit" id="btnSubmitRSVP" class="btn primary-btn">
+              <span>Submit Response</span>
+              <div class="btn-glow"></div>
+            </button>
+          </form>
+
+          <!-- Success Screen (Hidden initially) -->
+          <div id="rsvpSuccess" class="success-screen hidden">
+            <div class="success-icon">💌</div>
+            <h3>Response Confirmed!</h3>
+            <p class="success-subtitle">Your response has been submitted:</p>
+
+            <div class="response-summary-card">
+              <div class="summary-row">
+                <span class="summary-label">Email</span>
+                <span class="summary-value" id="summaryEmail">you@example.com</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Attending</span>
+                <span class="summary-value" id="summaryAttending">Yes</span>
+              </div>
+            </div>
+
+            <p class="success-footer">A confirmation email has been sent. We'll see you on June 13, 2026!</p>
+          </div>
         </div>
       </section>
 
@@ -115,6 +206,7 @@
   </main>
 
   <!-- JavaScript -->
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
+
 </html>

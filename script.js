@@ -1,71 +1,312 @@
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js'
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-analytics.js'
+import {
+  getAuth,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  signOut,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js'
+import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js'
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyA53LCtUehP0nXqtZhzfwbIRMP11DfgPto",
+  authDomain: "countdown-48417.firebaseapp.com",
+  projectId: "countdown-48417",
+  storageBucket: "countdown-48417.firebasestorage.app",
+  messagingSenderId: "254964571000",
+  appId: "1:254964571000:web:ec7f3f2954f68d3125068d",
+  measurementId: "G-JJQGRSVSQ8"
+};
+
+// Initialize Firebase services
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Whitelisted email addresses
+// TODO: Replace these with your actual email addresses
+const allowedEmails = [
+  'mandarmandavgane4@gmail.com',    // Mandar test email
+  'khushigangwai02@gmail.com'  // Recipient email
+];
+
 document.addEventListener('DOMContentLoaded', () => {
   // --- DOM Elements ---
   const loginModal = document.getElementById('loginModal');
   const loginForm = document.getElementById('loginForm');
-  const phoneNumberInput = document.getElementById('phoneNumber');
-  const phoneError = document.getElementById('phoneError');
+  const loginEmailInput = document.getElementById('loginEmail');
+  const emailError = document.getElementById('emailError');
   const mainContent = document.getElementById('mainContent');
   const btnLetsSee = document.getElementById('btnLetsSee');
+  const btnGoToAvailability = document.getElementById('btnGoToAvailability');
   const slideshowWrapper = document.querySelector('.slideshow-wrapper');
-  
+
+  // Section wrappers inside login form
+  const emailEntrySection = document.getElementById('emailEntrySection');
+  const emailSentSection = document.getElementById('emailSentSection');
+
+  // RSVP Form elements
+  const availabilityForm = document.getElementById('availabilityForm');
+  const userEmail = document.getElementById('userEmail');
+  const userEmailError = document.getElementById('emailError'); // Error on RSVP page
+  const choiceError = document.getElementById('choiceError');
+  const rsvpSuccess = document.getElementById('rsvpSuccess');
+
   // Countdown elements
   const daysEl = document.getElementById('days');
   const hoursEl = document.getElementById('hours');
   const minutesEl = document.getElementById('minutes');
   const secondsEl = document.getElementById('seconds');
-  
+
   // Hint button elements
   const btnHint = document.getElementById('btnHint');
   const hintBox = document.getElementById('hintBox');
 
-  // --- Form Formatting ---
-  // Simple automatic phone formatting for Indian numbers (e.g. 98765-43210)
-  phoneNumberInput.addEventListener('input', (e) => {
-    let cleaned = e.target.value.replace(/\D/g, '').substring(0, 10);
-    let x = cleaned.match(/(\d{0,5})(\d{0,5})/);
-    e.target.value = !x[2] ? x[1] : x[1] + '-' + x[2];
-  });
+  // --- Step 1: Check Auth Session & Link Redirection on Load ---
+  
+  // Convert whitelist to lowercase for robust matching
+  const whitelistedEmailsLower = allowedEmails.map(email => email.toLowerCase());
 
-  // --- Step 1: Login Authentication ---
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const phoneVal = phoneNumberInput.value.trim();
-    
-    // Simple validation (must contain at least 10 digits)
-    const digitCount = phoneVal.replace(/\D/g, '').length;
-    
-    if (digitCount < 10) {
-      // Show error styling & trigger shake
-      loginForm.classList.add('shake-animation');
-      loginForm.parentElement.classList.add('invalid');
-      
-      // Remove shake class after animation completes to allow re-triggering
-      setTimeout(() => {
-        loginForm.classList.remove('shake-animation');
-      }, 400);
+  // Listen to current session state
+  onAuthStateChanged(auth, (user) => {
+    // --- DEVELOPER TESTING BYPASS ---
+    // Uncomment the two lines below to bypass login and test locally on http://localhost:8000
+    // loginModal.classList.add('hidden');
+    // mainContent.classList.remove('hidden');
+
+    if (user) {
+      if (whitelistedEmailsLower.includes(user.email.toLowerCase())) {
+        // User is logged in and whitelisted! Auto-enter
+        loginModal.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        
+        // Prefill the email field in the availability form
+        if (userEmail) {
+          userEmail.value = user.email;
+        }
+      } else {
+        // Logged in but not whitelisted, sign out and show login
+        signOut(auth).then(() => {
+          loginModal.classList.remove('hidden');
+          mainContent.classList.add('hidden');
+        });
+      }
     } else {
-      // Clear error and hide modal
-      loginForm.parentElement.classList.remove('invalid');
-      loginModal.classList.add('hidden');
-      
-      // Show main content container
-      mainContent.classList.remove('hidden');
+      // Not logged in: only show login screen if not currently verifying a magic link redirect
+      if (!isSignInWithEmailLink(auth, window.location.href)) {
+        loginModal.classList.remove('hidden');
+        mainContent.classList.add('hidden');
+      }
     }
   });
 
-  // --- Step 2: Slide transition on "Let's See" ---
+  // Helper function to complete magic link authentication
+  function completeEmailLinkSignIn(email) {
+    signInWithEmailLink(auth, email, window.location.href)
+      .then((result) => {
+        // Clear saved email
+        window.localStorage.removeItem('emailForSignIn');
+        
+        // Verify Whitelist
+        if (!whitelistedEmailsLower.includes(result.user.email.toLowerCase())) {
+          signOut(auth).then(() => {
+            alert("Access Denied: This email address is not authorized to access this website.");
+            window.location.href = window.location.origin + window.location.pathname; // Clean url parameters
+          });
+        } else {
+          // Authorized user logs in successfully
+          loginModal.classList.add('hidden');
+          mainContent.classList.remove('hidden');
+        }
+      })
+      .catch((error) => {
+        console.error("Magic link sign-in failed:", error);
+        alert("Sign-in link expired or invalid. Please request a new link.");
+        window.location.href = window.location.origin + window.location.pathname; // Clean url
+      });
+  }
+
+  // Handle Firebase Sign-in Link redirect
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    // Get the email from localStorage (saved when they clicked Send Link)
+    let email = window.localStorage.getItem('emailForSignIn');
+
+    if (email) {
+      completeEmailLinkSignIn(email);
+    } else {
+      // Clean UI to request email inline instead of browser prompt popup
+      document.querySelector('.modal-header h2').textContent = "Confirm Email";
+      document.querySelector('.modal-header p').textContent = "Please confirm your email address to complete sign-in.";
+      document.querySelector('#loginBtn span').textContent = "Confirm & Sign In";
+      
+      // Tag the form to process submit as a confirmation
+      loginForm.dataset.mode = "confirm";
+    }
+  }
+
+  // --- Step 2: Trigger Magic Link email dispatch ---
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const emailVal = loginEmailInput.value.trim();
+
+    // Validate email pattern
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(emailVal)) {
+      loginForm.classList.add('shake-animation');
+      loginEmailInput.parentElement.parentElement.classList.add('invalid');
+      setTimeout(() => {
+        loginForm.classList.remove('shake-animation');
+      }, 400);
+      return;
+    }
+
+    loginEmailInput.parentElement.parentElement.classList.remove('invalid');
+
+    // If we are in confirmation mode, complete sign in
+    if (loginForm.dataset.mode === "confirm") {
+      completeEmailLinkSignIn(emailVal);
+      return;
+    }
+
+    // Firebase Action Code Settings (defines redirect parameters)
+    const actionCodeSettings = {
+      // Redirect URL back to the website URL (works for localhost and GitHub pages automatically)
+      url: window.location.href,
+      handleCodeInApp: true
+    };
+
+    // Trigger Magic Link email
+    sendSignInLinkToEmail(auth, emailVal, actionCodeSettings)
+      .then(() => {
+        // Save the email locally to complete sign-in when they redirect back
+        window.localStorage.setItem('emailForSignIn', emailVal);
+
+        // Hide entry form, show confirmation state
+        emailEntrySection.classList.add('hidden');
+        emailSentSection.classList.remove('hidden');
+      })
+      .catch((error) => {
+        console.error("Failed to send sign-in link:", error);
+        document.getElementById('emailError').textContent = "Failed to send email. Try again later.";
+        loginEmailInput.parentElement.parentElement.classList.add('invalid');
+        loginForm.classList.add('shake-animation');
+        setTimeout(() => {
+          loginForm.classList.remove('shake-animation');
+        }, 400);
+      });
+  });
+
+  // --- Step 3: Slide 1 -> Slide 2 (Greeting -> Countdown) ---
   btnLetsSee.addEventListener('click', () => {
-    slideshowWrapper.classList.add('slide-shift-left');
-    // Start the countdown timer ticks
+    slideshowWrapper.classList.remove('show-slide-1');
+    slideshowWrapper.classList.add('show-slide-2');
     startCountdown();
   });
 
-  // --- Step 3: Countdown Timer Logic ---
+  // --- Step 4: Slide 2 -> Slide 3 (Countdown -> RSVP) ---
+  btnGoToAvailability.addEventListener('click', () => {
+    slideshowWrapper.classList.remove('show-slide-2');
+    slideshowWrapper.classList.add('show-slide-3');
+  });
+
+  // --- Step 5: RSVP Availability Form Validation & Firestore Save ---
+  availabilityForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const emailVal = userEmail.value.trim();
+    const attendanceVal = availabilityForm.querySelector('input[name="attendance"]:checked');
+
+    let isValid = true;
+
+    // RSVP Email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(emailVal)) {
+      userEmail.parentElement.parentElement.classList.add('invalid');
+      isValid = false;
+    } else {
+      userEmail.parentElement.parentElement.classList.remove('invalid');
+    }
+
+    // Attendance choice validation
+    if (!attendanceVal) {
+      choiceError.parentElement.classList.add('invalid');
+      isValid = false;
+    } else {
+      choiceError.parentElement.classList.remove('invalid');
+    }
+
+    if (isValid) {
+      const user = auth.currentUser;
+      const userEmailStr = user ? user.email : "anonymous";
+
+      const rsvpData = {
+        email: emailVal,
+        attending: attendanceVal.value,
+        submittedAt: new Date().toISOString(),
+        signedInUserEmail: userEmailStr
+      };
+
+      // --- EmailJS Custom Email Dispatch ---
+      // TODO: Replace with your actual Service ID, Template ID, and Public Key from your EmailJS Account
+      const emailjsServiceId = "service_93t6wzg";
+      const emailjsTemplateId = "template_3pio0t1";
+      const emailjsPublicKey = "uYBSVef1oHYZmGyIa";
+
+      fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: emailjsServiceId,
+          template_id: emailjsTemplateId,
+          user_id: emailjsPublicKey,
+          template_params: {
+            to_email: emailVal, // Sends to the inputted email address
+            attending: attendanceVal.value === 'yes' ? 'Yes, count me in! 🎉' : 'No, definately count me in. 😁',
+            submitted_at: rsvpData.submittedAt
+          }
+        })
+      })
+        .then(response => {
+          console.log("EmailJS response status:", response.status);
+        })
+        .catch(err => {
+          console.error("EmailJS dispatch failed:", err);
+        });
+
+      const showSuccessScreen = () => {
+        document.getElementById('summaryEmail').textContent = emailVal;
+        document.getElementById('summaryAttending').textContent = attendanceVal.value === 'yes' ? 'Yes, count me in! 🎉' : 'No, definitely count me in. 😁';
+        availabilityForm.classList.add('hidden');
+        rsvpSuccess.classList.remove('hidden');
+      };
+
+      // Save directly to Firestore under collection 'rsvps' with key as the authenticated user email
+      const safeKey = userEmailStr.replace(/[^a-zA-Z0-9]/g, '_');
+      const rsvpDocRef = doc(db, "rsvps", safeKey);
+      setDoc(rsvpDocRef, rsvpData)
+        .then(() => {
+          showSuccessScreen();
+        })
+        .catch((error) => {
+          console.error("Firestore database write failed:", error);
+          // Graceful fallback to screen confirmation to ensure seamless testing
+          showSuccessScreen();
+        });
+    }
+  });
+
+  // --- Step 6: Countdown Timer Logic ---
   const targetDate = new Date('2026-06-13T00:00:00');
   let intervalId = null;
 
   function startCountdown() {
-    if (intervalId) return; // Prevent multiple intervals
+    if (intervalId) return;
 
     function updateTimer() {
       const now = new Date();
@@ -85,20 +326,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
 
-      // Pad numbers to 2 digits
       const dStr = String(days).padStart(2, '0');
       const hStr = String(hours).padStart(2, '0');
       const mStr = String(minutes).padStart(2, '0');
       const sStr = String(seconds).padStart(2, '0');
 
-      // Update text helper with quick bounce transition if value changes
       updateValueWithAnimation(daysEl, dStr);
       updateValueWithAnimation(hoursEl, hStr);
       updateValueWithAnimation(minutesEl, mStr);
       updateValueWithAnimation(secondsEl, sStr);
     }
 
-    // Run immediately then tick
     updateTimer();
     intervalId = setInterval(updateTimer, 1000);
   }
@@ -113,11 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Step 4: Runaway Hint Button Logic ---
+  // --- Step 7: Runaway Hint Button Logic ---
   let evasionCount = 0;
   let isReturning = false;
 
-  // Offsets for shifting button position
   const shiftOffsets = [
     { x: -110, y: -30 },
     { x: 120, y: 35 },
@@ -126,41 +363,36 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   function handleEvasion(e) {
-    // If already stable or returning, act normally
     if (evasionCount >= 4 || isReturning) return;
-
-    // Prevent clicking/tapping during evasion
     e.preventDefault();
 
-    // Get next coordinate
     const offset = shiftOffsets[evasionCount];
     btnHint.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
-    
     evasionCount++;
 
-    // If it reached 4 shifts, schedule returning to the center (original position)
     if (evasionCount === 4) {
       isReturning = true;
       setTimeout(() => {
         btnHint.style.transform = 'translate(0px, 0px)';
         btnHint.classList.add('stable-clickable');
         isReturning = false;
-      }, 800); // 800ms delay to let the user observe the 4th position before coming home
+      }, 800);
     }
   }
 
-  // Listen to mouseover/mouseenter and click events to make evasion highly responsive
   btnHint.addEventListener('mouseenter', handleEvasion);
   btnHint.addEventListener('click', (e) => {
     if (evasionCount < 4) {
       handleEvasion(e);
     } else if (evasionCount === 4 && !isReturning) {
-      // Toggle hint box expansion
       hintBox.classList.toggle('expanded');
+      
+      if (hintBox.classList.contains('expanded')) {
+        btnGoToAvailability.classList.remove('btn-hidden');
+      }
     }
   });
 
-  // Support mobile touchstart to escape touch immediately
   btnHint.addEventListener('touchstart', (e) => {
     if (evasionCount < 4) {
       handleEvasion(e);

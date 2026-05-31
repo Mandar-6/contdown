@@ -380,29 +380,60 @@ body {
   transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.9s ease, visibility 0.9s;
 }
 
-/* Absolute layering states */
-#slideGreeting {
+/* Absolute layering states - Step 1 */
+.show-slide-1 #slideGreeting {
   transform: translateX(0);
   opacity: 1;
   visibility: visible;
   z-index: 2;
 }
 
-#slideCountdown {
+.show-slide-1 #slideCountdown,
+.show-slide-1 #slideAvailability {
   transform: translateX(100%);
   opacity: 0;
   visibility: hidden;
   z-index: 1;
 }
 
-/* Transitioned States */
-.slide-shift-left #slideGreeting {
+/* Step 2 */
+.show-slide-2 #slideGreeting {
   transform: translateX(-100%);
   opacity: 0;
   visibility: hidden;
+  z-index: 1;
 }
 
-.slide-shift-left #slideCountdown {
+.show-slide-2 #slideCountdown {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+}
+
+.show-slide-2 #slideAvailability {
+  transform: translateX(100%);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+}
+
+/* Step 3 */
+.show-slide-3 #slideGreeting {
+  transform: translateX(-200%);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+}
+
+.show-slide-3 #slideCountdown {
+  transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+}
+
+.show-slide-3 #slideAvailability {
   transform: translateX(0);
   opacity: 1;
   visibility: visible;
@@ -457,6 +488,7 @@ body {
   margin-bottom: clamp(25px, 4vw, 45px);
   background: linear-gradient(135deg, #6c5ce7, var(--pink-accent));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -614,6 +646,195 @@ body {
   color: var(--text-secondary);
 }
 
+/* Slide 3 - RSVP Form Styles */
+.slide-next-trigger {
+  margin-top: clamp(20px, 3.5vw, 40px);
+}
+
+.availability-form {
+  width: 100%;
+  max-width: 480px;
+  text-align: left;
+}
+
+.availability-form .primary-btn {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.choices-container {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.choice-card {
+  flex: 1;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.choice-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.choice-content {
+  flex: 1;
+  background: rgba(45, 38, 77, 0.03);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-sizing: border-box;
+}
+
+.choice-emoji {
+  font-size: 28px;
+  transition: transform 0.3s ease;
+}
+
+.choice-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+/* Radio Checked State Highlight */
+.choice-card input[type="radio"]:checked + .choice-content {
+  background: rgba(233, 154, 123, 0.15); /* Warm peach tint */
+  box-shadow: 0 0 0 2px var(--cyan-accent); /* Outline glow */
+}
+
+.choice-card input[type="radio"]:checked + .choice-content .choice-text {
+  color: var(--text-primary);
+}
+
+.choice-card input[type="radio"]:checked + .choice-content .choice-emoji {
+  transform: scale(1.2) rotate(10deg);
+}
+
+.choice-card:hover .choice-content {
+  background: rgba(45, 38, 77, 0.06);
+}
+
+/* Success RSVP Screen */
+.success-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0;
+  animation: scale-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.success-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: float-icon 3s infinite ease-in-out;
+}
+
+.success-screen h3 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+.success-subtitle {
+  margin-bottom: 0 !important;
+}
+
+.response-summary-card {
+  background: rgba(45, 38, 77, 0.04);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.summary-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.summary-value {
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-all;
+  text-align: right;
+  max-width: 180px;
+}
+
+.success-footer {
+  font-size: 14px !important;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 10px;
+}
+
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+/* Confirm Availability Button Reveal Animation */
+#btnGoToAvailability {
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1), margin-top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 80px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 30px;
+}
+
+#btnGoToAvailability.btn-hidden {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+  overflow: hidden;
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .glass-card {
@@ -622,5 +843,9 @@ body {
   }
   .modal-card {
     padding: 30px 20px;
+  }
+  .choices-container {
+    flex-direction: column;
+    gap: 10px;
   }
 }
