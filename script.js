@@ -8,7 +8,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js'
-import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js'
+import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js'
 import confetti from 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/+esm'
 
 // Firebase configuration
@@ -28,12 +28,8 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Whitelisted email addresses
-// TODO: Replace these with your actual email addresses
-const allowedEmails = [
-  'mandarmandavgane4@gmail.com',    // Mandar test email
-  'khushigangwai02@gmail.com'  // Recipient email
-];
+// Whitelist is managed dynamically in Firestore under the "whitelist" collection.
+
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- DOM Elements ---
@@ -69,9 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Step 1: Check Auth Session & Link Redirection on Load ---
   
-  // Convert whitelist to lowercase for robust matching
-  const whitelistedEmailsLower = allowedEmails.map(email => email.toLowerCase());
-
   // Listen to current session state
   onAuthStateChanged(auth, (user) => {
     // --- DEVELOPER TESTING BYPASS ---
@@ -80,22 +73,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // mainContent.classList.remove('hidden');
 
     if (user) {
-      if (whitelistedEmailsLower.includes(user.email.toLowerCase())) {
-        // User is logged in and whitelisted! Auto-enter
-        loginModal.classList.add('hidden');
-        mainContent.classList.remove('hidden');
-        
-        // Prefill the email field in the availability form
-        if (userEmail) {
-          userEmail.value = user.email;
-        }
-      } else {
-        // Logged in but not whitelisted, sign out and show login
-        signOut(auth).then(() => {
-          loginModal.classList.remove('hidden');
-          mainContent.classList.add('hidden');
+      const emailLower = user.email.toLowerCase();
+      const whitelistDocRef = doc(db, 'whitelist', emailLower);
+      getDoc(whitelistDocRef)
+        .then((docSnap) => {
+          if (docSnap.exists() && docSnap.data().allowed !== false) {
+            // User is logged in and whitelisted! Auto-enter
+            loginModal.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            
+            // Prefill the email field in the availability form
+            if (userEmail) {
+              userEmail.value = user.email;
+            }
+          } else {
+            // Logged in but not whitelisted, sign out and show login
+            signOut(auth).then(() => {
+              loginModal.classList.remove('hidden');
+              mainContent.classList.add('hidden');
+              alert('Access Denied: Your email is not whitelisted.');
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("Whitelist check failed on load:", error);
+          signOut(auth).then(() => {
+            loginModal.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+          });
         });
-      }
     } else {
       // Not logged in: only show login screen if not currently verifying a magic link redirect
       if (!isSignInWithEmailLink(auth, window.location.href)) {
@@ -112,17 +118,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear saved email
         window.localStorage.removeItem('emailForSignIn');
         
-        // Verify Whitelist
-        if (!whitelistedEmailsLower.includes(result.user.email.toLowerCase())) {
-          signOut(auth).then(() => {
-            alert("Access Denied: This email address is not authorized to access this website.");
-            window.location.href = window.location.origin + window.location.pathname; // Clean url parameters
+        // Verify Whitelist from Firestore
+        const emailLower = result.user.email.toLowerCase();
+        const whitelistDocRef = doc(db, 'whitelist', emailLower);
+        getDoc(whitelistDocRef)
+          .then((docSnap) => {
+            if (docSnap.exists() && docSnap.data().allowed !== false) {
+              // Authorized user logs in successfully
+              loginModal.classList.add('hidden');
+              mainContent.classList.remove('hidden');
+            } else {
+              signOut(auth).then(() => {
+                alert("Access Denied: This email address is not authorized to access this website.");
+                window.location.href = window.location.origin + window.location.pathname; // Clean url parameters
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Whitelist check failed during validation:", error);
+            signOut(auth).then(() => {
+              alert("Error verifying your authorization. Please try again.");
+              window.location.href = window.location.origin + window.location.pathname;
+            });
           });
-        } else {
-          // Authorized user logs in successfully
-          loginModal.classList.add('hidden');
-          mainContent.classList.remove('hidden');
-        }
       })
       .catch((error) => {
         console.error("Magic link sign-in failed:", error);
@@ -180,24 +198,70 @@ document.addEventListener('DOMContentLoaded', () => {
       handleCodeInApp: true
     };
 
-    // Trigger Magic Link email
-    sendSignInLinkToEmail(auth, emailVal, actionCodeSettings)
-      .then(() => {
-        // Save the email locally to complete sign-in when they redirect back
-        window.localStorage.setItem('emailForSignIn', emailVal);
+    // Toggle loading state on the button
+    const submitBtn = document.getElementById('loginBtn');
+    if (submitBtn) {
+      submitBtn.classList.add('btn-loading');
+      submitBtn.disabled = true;
+    }
 
-        // Hide entry form, show confirmation state
-        emailEntrySection.classList.add('hidden');
-        emailSentSection.classList.remove('hidden');
+    // Verify Whitelist before sending the magic link
+    const emailLower = emailVal.toLowerCase();
+    const whitelistDocRef = doc(db, 'whitelist', emailLower);
+    getDoc(whitelistDocRef)
+      .then((docSnap) => {
+        if (docSnap.exists() && docSnap.data().allowed !== false) {
+          // Whitelisted! Proceed to send email link
+          sendSignInLinkToEmail(auth, emailVal, actionCodeSettings)
+            .then(() => {
+              // Save the email locally to complete sign-in when they redirect back
+              window.localStorage.setItem('emailForSignIn', emailVal);
+
+              // Hide entry form, show confirmation state
+              emailEntrySection.classList.add('hidden');
+              emailSentSection.classList.remove('hidden');
+            })
+            .catch((error) => {
+              console.error("Failed to send sign-in link:", error);
+              document.getElementById('emailError').textContent = "Failed to send email. Try again later.";
+              loginEmailInput.parentElement.parentElement.classList.add('invalid');
+              loginForm.classList.add('shake-animation');
+              setTimeout(() => {
+                loginForm.classList.remove('shake-animation');
+              }, 400);
+            })
+            .finally(() => {
+              if (submitBtn) {
+                submitBtn.classList.remove('btn-loading');
+                submitBtn.disabled = false;
+              }
+            });
+        } else {
+          // Not whitelisted! Reject instantly
+          document.getElementById('emailError').textContent = "Access Denied: This email is not authorized.";
+          loginEmailInput.parentElement.parentElement.classList.add('invalid');
+          loginForm.classList.add('shake-animation');
+          setTimeout(() => {
+            loginForm.classList.remove('shake-animation');
+          }, 400);
+          if (submitBtn) {
+            submitBtn.classList.remove('btn-loading');
+            submitBtn.disabled = false;
+          }
+        }
       })
-      .catch((error) => {
-        console.error("Failed to send sign-in link:", error);
-        document.getElementById('emailError').textContent = "Failed to send email. Try again later.";
+      .catch((err) => {
+        console.error("Error reading whitelist doc:", err);
+        document.getElementById('emailError').textContent = "Error verifying email. Try again.";
         loginEmailInput.parentElement.parentElement.classList.add('invalid');
         loginForm.classList.add('shake-animation');
         setTimeout(() => {
           loginForm.classList.remove('shake-animation');
         }, 400);
+        if (submitBtn) {
+          submitBtn.classList.remove('btn-loading');
+          submitBtn.disabled = false;
+        }
       });
   });
 
