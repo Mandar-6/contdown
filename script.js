@@ -172,6 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const emailVal = loginEmailInput.value.trim();
 
+    // --- Passcode Bypass Option ---
+    if (emailVal.toLowerCase() === 'surprise2026') {
+      // Clear errors
+      loginEmailInput.parentElement.parentElement.classList.remove('invalid');
+      // Bypass login screen
+      loginModal.classList.add('hidden');
+      mainContent.classList.remove('hidden');
+      // Leave RSVP email input blank so they enter their actual email on slide 3
+      if (userEmail) {
+        userEmail.value = '';
+      }
+      return;
+    }
+
     // Validate email pattern
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(emailVal)) {
