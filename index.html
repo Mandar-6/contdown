@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Surprise</title>
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎁</text></svg>">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -120,8 +122,12 @@
             <!-- Hidden Hint Details Box -->
             <div id="hintBox" class="hint-box collapsed">
               <div class="hint-box-content">
-                <h3>💡 A Secret Awaits</h3>
-                <p>I have planned something special for us on our day.</p>
+                <h3> A Secret Awaits</h3>
+                <h4>I have planned something special for us on our day!</h4>
+                <ul style="list-style-type:circle;">
+                  <li>Hint: Prepare to be surrounded by people who are all on the same track, even if they arrived from very different places.</li>
+                  <li>Hint: Comfortable shoes may become more important than comfortable seats.</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -138,47 +144,49 @@
       <!-- Slide 3: Confirm Availability -->
       <section id="slideAvailability" class="slide">
         <div class="glass-card availability-card">
-          <h2 class="mystery-heading">Confirm Availability</h2>
-          <p class="greeting-subtitle" style="margin-bottom: 25px;">Let us know if you'll be joining us on this
-            memorable day!</p>
+          <div id="rsvpFormContainer" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <h2 class="mystery-heading">Confirm Availability</h2>
+            <p class="greeting-subtitle" style="margin-bottom: 25px;">Let me know if you'll be joining me on this
+              memorable day!</p>
 
-          <form id="availabilityForm" class="availability-form" novalidate>
-            <!-- Email Field -->
-            <div class="input-group">
-              <label for="userEmail">Email Address</label>
-              <div class="phone-input-wrapper">
-                <input type="email" id="userEmail" placeholder="you@example.com" required>
+            <form id="availabilityForm" class="availability-form" novalidate>
+              <!-- Email Field -->
+              <div class="input-group">
+                <label for="userEmail">Email Address</label>
+                <div class="phone-input-wrapper">
+                  <input type="email" id="userEmail" placeholder="you@example.com" required>
+                </div>
+                <span class="error-msg" id="emailError">Please enter a valid email address</span>
               </div>
-              <span class="error-msg" id="emailError">Please enter a valid email address</span>
-            </div>
 
-            <!-- Choice Field -->
-            <div class="input-group">
-              <label>Will you be attending?</label>
-              <div class="choices-container">
-                <label class="choice-card" for="attendYes">
-                  <input type="radio" id="attendYes" name="attendance" value="yes" required>
-                  <div class="choice-content">
-                    <span class="choice-emoji">🎉</span>
-                    <span class="choice-text">Yes, count me in!</span>
-                  </div>
-                </label>
-                <label class="choice-card" for="attendNo">
-                  <input type="radio" id="attendNo" name="attendance" value="no" required>
-                  <div class="choice-content">
-                    <span class="choice-emoji">😁</span>
-                    <span class="choice-text">No, definately count me in.</span>
-                  </div>
-                </label>
+              <!-- Choice Field -->
+              <div class="input-group">
+                <label>Will you be joining me?</label>
+                <div class="choices-container">
+                  <label class="choice-card" for="attendYes">
+                    <input type="radio" id="attendYes" name="attendance" value="yes" required>
+                    <div class="choice-content">
+                      <span class="choice-emoji">🎉</span>
+                      <span class="choice-text">Yes, count me in!</span>
+                    </div>
+                  </label>
+                  <label class="choice-card" for="attendNo">
+                    <input type="radio" id="attendNo" name="attendance" value="no" required>
+                    <div class="choice-content">
+                      <span class="choice-emoji">😢</span>
+                      <span class="choice-text">No, I can't make it.</span>
+                    </div>
+                  </label>
+                </div>
+                <span class="error-msg" id="choiceError">Please select one of the options</span>
               </div>
-              <span class="error-msg" id="choiceError">Please select one of the options</span>
-            </div>
 
-            <button type="submit" id="btnSubmitRSVP" class="btn primary-btn">
-              <span>Submit Response</span>
-              <div class="btn-glow"></div>
-            </button>
-          </form>
+              <button type="submit" id="btnSubmitRSVP" class="btn primary-btn">
+                <span>Submit Response</span>
+                <div class="btn-glow"></div>
+              </button>
+            </form>
+          </div>
 
           <!-- Success Screen (Hidden initially) -->
           <div id="rsvpSuccess" class="success-screen hidden">
@@ -197,7 +205,7 @@
               </div>
             </div>
 
-            <p class="success-footer">A confirmation email has been sent. We'll see you on June 13, 2026!</p>
+            <p class="success-footer">A confirmation email has been sent. Be ready for June 13, 2026!</p>
           </div>
         </div>
       </section>

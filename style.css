@@ -139,6 +139,36 @@ body {
   box-shadow: 0 10px 25px rgba(229, 91, 128, 0.2);
 }
 
+/* Button Loading Spinner State */
+.btn-loading {
+  pointer-events: none;
+  position: relative;
+}
+
+.btn-loading span {
+  opacity: 0 !important; /* Hide text without changing button dimensions */
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: button-spin 0.6s linear infinite;
+  z-index: 5;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}
+
 .primary-btn:hover {
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 15px 30px rgba(229, 91, 128, 0.3);
@@ -687,12 +717,12 @@ body {
   flex: 1;
   background: rgba(45, 38, 77, 0.03);
   border-radius: 16px;
-  padding: 16px;
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 12px;
   text-align: center;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-sizing: border-box;
@@ -810,6 +840,16 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+
+@keyframes pop-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.pop-animation {
+  animation: pop-bounce 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
 /* Confirm Availability Button Reveal Animation */
 #btnGoToAvailability {
   transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1), margin-top 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -840,6 +880,7 @@ body {
   .glass-card {
     border-radius: 28px;
     padding: 30px 15px;
+    width: 90%; /* Give slightly more width to cards on mobile screens */
   }
   .modal-card {
     padding: 30px 20px;
@@ -847,5 +888,26 @@ body {
   .choices-container {
     flex-direction: column;
     gap: 10px;
+  }
+  
+  /* Sizing down the countdown elements to prevent clipping on narrow viewports */
+  .time-number {
+    min-width: 50px;
+    height: 50px;
+    font-size: 24px;
+    border-radius: 12px;
+    padding: 0 4px;
+  }
+  .time-separator {
+    font-size: 18px;
+    margin-bottom: 15px; /* Aligns dots vertically with the smaller numbers */
+  }
+  .countdown-display {
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .time-label {
+    font-size: 9px;
+    margin-top: 6px;
   }
 }

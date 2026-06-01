@@ -9,6 +9,7 @@ import {
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js'
 import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js'
+import confetti from 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/+esm'
 
 // Firebase configuration
 const firebaseConfig = {
@@ -213,6 +214,136 @@ document.addEventListener('DOMContentLoaded', () => {
     slideshowWrapper.classList.add('show-slide-3');
   });
 
+  // Playful Option Selection: Redirect "No" clicks to "Yes" & Trigger Confetti Celebration
+  const attendYes = document.getElementById('attendYes');
+  const attendNo = document.getElementById('attendNo');
+
+  if (attendYes && attendNo) {
+    const triggerConfetti = () => {
+      const colors = ['#e55b80', '#e99a7b', '#6c5ce7', '#ffbe0b', '#4895ef'];
+      
+      // 1. Symmetrical base bursts from corners (increased spread, velocity, and drift to reach the center)
+      // Bottom-Left (shoots up and right)
+      confetti({
+        particleCount: 50,
+        angle: 45,
+        spread: 80,
+        startVelocity: 55,
+        gravity: 0.9,
+        drift: 1.8,
+        origin: { x: 0, y: 1 },
+        colors: colors
+      });
+
+      // Bottom-Right (shoots up and left)
+      confetti({
+        particleCount: 50,
+        angle: 135,
+        spread: 80,
+        startVelocity: 55,
+        gravity: 0.9,
+        drift: -1.8, // drifts leftwards towards the center
+        origin: { x: 1, y: 1 },
+        colors: colors
+      });
+
+      // Top-Left (shoots down and right)
+      confetti({
+        particleCount: 50,
+        angle: 315,
+        spread: 80,
+        startVelocity: 55,
+        gravity: 0.9,
+        drift: 1.8,
+        origin: { x: 0, y: 0 },
+        colors: colors
+      });
+
+      // Top-Right (shoots down and left)
+      confetti({
+        particleCount: 50,
+        angle: 225,
+        spread: 80,
+        startVelocity: 55,
+        gravity: 0.9,
+        drift: -1.8, // drifts leftwards towards the center
+        origin: { x: 1, y: 0 },
+        colors: colors
+      });
+
+      // 2. 1.2-second continuous shower along BOTH left and right sides, meeting in the middle
+      const duration = 1200;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        // Left side shower (shoots and drifts rightward)
+        confetti({
+          particleCount: 1,
+          angle: Math.random() * 40 - 20, // Shoots mostly rightward
+          spread: 50,
+          startVelocity: Math.random() * 15 + 30,
+          gravity: 0.85,
+          drift: 2.2,
+          origin: { x: Math.random() * 0.15, y: Math.random() },
+          colors: colors
+        });
+
+        // Right side shower (shoots and drifts leftward)
+        confetti({
+          particleCount: 1,
+          angle: 180 + (Math.random() * 40 - 20), // Shoots mostly leftward
+          spread: 50,
+          startVelocity: Math.random() * 15 + 30,
+          gravity: 0.85,
+          drift: -2.2,
+          origin: { x: 1 - (Math.random() * 0.15), y: Math.random() },
+          colors: colors
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    };
+
+    // Confetti on YES select
+    attendYes.addEventListener('change', () => {
+      if (attendYes.checked) {
+        triggerConfetti();
+      }
+    });
+
+    // Also trigger confetti if clicking YES card while it is already active
+    const yesCard = attendYes.closest('.choice-card');
+    if (yesCard) {
+      yesCard.addEventListener('click', () => {
+        if (attendYes.checked) {
+          triggerConfetti();
+        }
+      });
+    }
+
+    attendNo.addEventListener('change', () => {
+      if (attendNo.checked) {
+        // Quick visual delay so the user sees the click before it pops back to Yes
+        setTimeout(() => {
+          attendYes.checked = true;
+          // Dispatch change event to trigger styling and confetti celebration
+          attendYes.dispatchEvent(new Event('change'));
+          
+          // Animate the Yes card to draw attention to it
+          const yesCardContent = attendYes.closest('.choice-card').querySelector('.choice-content');
+          if (yesCardContent) {
+            yesCardContent.classList.add('pop-animation');
+            setTimeout(() => {
+              yesCardContent.classList.remove('pop-animation');
+            }, 500);
+          }
+        }, 180);
+      }
+    });
+  }
+
   // --- Step 5: RSVP Availability Form Validation & Firestore Save ---
   availabilityForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -240,6 +371,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (isValid) {
+      const btnSubmitRSVP = document.getElementById('btnSubmitRSVP');
+      if (btnSubmitRSVP) {
+        btnSubmitRSVP.classList.add('btn-loading');
+        btnSubmitRSVP.disabled = true;
+      }
+
       const user = auth.currentUser;
       const userEmailStr = user ? user.email : "anonymous";
 
@@ -282,7 +419,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const showSuccessScreen = () => {
         document.getElementById('summaryEmail').textContent = emailVal;
         document.getElementById('summaryAttending').textContent = attendanceVal.value === 'yes' ? 'Yes, count me in! 🎉' : 'No, definitely count me in. 😁';
-        availabilityForm.classList.add('hidden');
+        const formContainer = document.getElementById('rsvpFormContainer');
+        if (formContainer) {
+          formContainer.classList.add('hidden');
+        } else {
+          availabilityForm.classList.add('hidden');
+        }
         rsvpSuccess.classList.remove('hidden');
       };
 
@@ -302,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Step 6: Countdown Timer Logic ---
-  const targetDate = new Date('2026-06-13T00:00:00');
+  const targetDate = new Date('2026-06-13T00:00:00+05:30');
   let intervalId = null;
 
   function startCountdown() {
